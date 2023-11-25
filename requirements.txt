@@ -1,0 +1,6 @@
+fastapi
+pymongo
+pydantic
+hypercorn
+typing
+jsonpath-ng
