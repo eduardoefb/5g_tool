@@ -17,7 +17,7 @@ async def create_subscriber(subscriber: Subscriber):
         raise HTTPException(status_code=422, detail = "IMSI can't be null.")
 
     client, db, collection = open_db()
-    if  collection.find_one({"auc.imsi": subscriber.auc.imsi }):
+    if collection.find_one({"auc.imsi": subscriber.auc.imsi }):
         close_db(client)
         raise HTTPException(status_code=422, detail = "IMSI Already exists.")
     else:
