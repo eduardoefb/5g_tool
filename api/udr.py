@@ -16,7 +16,6 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
-
 # Configure your TracerProvider with a service name
 resource = Resource(attributes={
     SERVICE_NAME: "UDR"
@@ -73,22 +72,40 @@ async def create_subscriber(subscriber: Subscriber):
 # GET authentication-data
 @router.get("/v1/subscription-data/imsi-{imsi}/authentication-data/authentication-subscription", response_class=PlainTextResponse)
 async def get_authentication_data(imsi, user_agent: Annotated[str | None, Header()] = None):
-    verify_user_agent(allowed_user_agents = ["UDM"], user_agent = user_agent)
+    with tracer.start_as_current_span("[UDR Subscriber]") as span:                        
+        span.set_attribute("subscriber.imsi", str(imsi))        
 
-    j = db().find_subscriber_one(query = { "auc.imsi": imsi })
-    if j:
-        return JSONResponse(content = {
-                    "authenticationMethod": j["udm_5g_data"]["authentication_data"]["authentication_method"],
-                    "encPermanentKey": str(j["auc"]["enc_key"]).lower(),
-                    "sequenceNumber":	{
-                        "sqn": '{:012}'.format(j["auc"]["sqn"])
-                    },
-                    "authenticationManagementField": j["auc"]["amf"],
-                    "encOpcKey": str(j["auc"]["opc_enc_key"]).lower()
-                }
-        )
-    else:
-        raise HTTPException(status_code=404)
+        with tracer.start_as_current_span("HTTP2 Request Processing") as span:                        
+            span.set_attribute("http.request_payload", str(f"IMSI: {imsi}"))
+
+        verify_user_agent(allowed_user_agents = ["UDM"], user_agent = user_agent)
+
+        j = db().find_subscriber_one(query = { "auc.imsi": imsi })
+        if j:
+
+            with tracer.start_as_current_span("HTTP2 Response Processing") as span:                        
+                span.set_attribute("http.request_payload", str({
+                        "authenticationMethod": j["udm_5g_data"]["authentication_data"]["authentication_method"],
+                        "encPermanentKey": str(j["auc"]["enc_key"]).lower(),
+                        "sequenceNumber":	{
+                            "sqn": '{:012}'.format(j["auc"]["sqn"])
+                        },
+                        "authenticationManagementField": j["auc"]["amf"],
+                        "encOpcKey": str(j["auc"]["opc_enc_key"]).lower()
+                    }))
+
+            return JSONResponse(content = {
+                        "authenticationMethod": j["udm_5g_data"]["authentication_data"]["authentication_method"],
+                        "encPermanentKey": str(j["auc"]["enc_key"]).lower(),
+                        "sequenceNumber":	{
+                            "sqn": '{:012}'.format(j["auc"]["sqn"])
+                        },
+                        "authenticationManagementField": j["auc"]["amf"],
+                        "encOpcKey": str(j["auc"]["opc_enc_key"]).lower()
+                    }
+            )
+        else:
+            raise HTTPException(status_code=404)
 
 # GET am-data        
 @router.get("/v1/subscription-data/imsi-{imsi}/{plmn_id}/provisioned-data/am-data", response_class=PlainTextResponse)

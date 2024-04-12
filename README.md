@@ -14,7 +14,7 @@ To manually start the application:
 python3 -m venv env
 source env/bin/activate
 pip install -r requirements.txt
-hypercorn main:app --bind 0.0.0.0:9090 --workers 4
+hypercorn main:app --bind 0.0.0.0:9999 --workers 4
 ```
 
 
@@ -63,15 +63,15 @@ To create a subscriber, use the following sintax:
 Query subscriber authentication:
 Using curl:
 ```shell
-curl --http2 http://127.0.0.1:9090/nudr-dr/v1/subscription-data/imsi-724170000000001/authentication-data/authentication-subscription     \
+curl --http2 http://127.0.0.1:9999/nudr-dr/v1/subscription-data/imsi-724170000000001/authentication-data/authentication-subscription     \
   -H':method: GET'    \
   -H'user-agent: UDM'
 
-curl --http2 http://127.0.0.1:9090/nudr-dr/v1/subscription-data/imsi-724170000000001/72417/provisioned-data/am-data     \
+curl --http2 http://127.0.0.1:9999/nudr-dr/v1/subscription-data/imsi-724170000000001/72417/provisioned-data/am-data     \
   -H':method: GET'    \
   -H'user-agent: UDM'
 
-curl --http2 -X 'PUT'   'http://localhost:9090/nudr-dr/v1/subscription-data/imsi-724170000000001/context-data/amf-3gpp-access'   \
+curl --http2 -X 'PUT'   'http://localhost:9999/nudr-dr/v1/subscription-data/imsi-724170000000001/context-data/amf-3gpp-access'   \
    -H 'accept: text/plain'   \
    -H 'user-agent: UDM' \
    -H 'Content-Type: application/json'   \
@@ -91,11 +91,11 @@ curl --http2 -X 'PUT'   'http://localhost:9090/nudr-dr/v1/subscription-data/imsi
 
 Using nghttp2:
 ```shell
-nghttp -v http://127.0.0.1:9090/nudr-dr/v1/subscription-data/imsi-724170000000001/authentication-data/authentication-subscription     \
+nghttp -v http://127.0.0.1:9999/nudr-dr/v1/subscription-data/imsi-724170000000001/authentication-data/authentication-subscription     \
 	-H':method: GET'    \
 	-H'user-agent: UDM'
 
-nghttp -v http://127.0.0.1:9090/nudr-dr/v1/subscription-data/imsi-724170000000001/72417/provisioned-data/am-data     \
+nghttp -v http://127.0.0.1:9999/nudr-dr/v1/subscription-data/imsi-724170000000001/72417/provisioned-data/am-data     \
 	-H':method: GET'    \
 	-H'user-agent: UDM'  
 
