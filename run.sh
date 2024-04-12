@@ -24,4 +24,4 @@ podman run -d --network mongodb-network \
 python3 -m venv env
 source env/bin/activate
 pip install -r requirements.txt
-hypercorn main:app --bind 0.0.0.0:9090 --workers 4    
+hypercorn main:app --bind 0.0.0.0:9999 --workers 4    

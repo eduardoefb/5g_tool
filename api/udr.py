@@ -52,7 +52,7 @@ async def get_provisioned_data_am_data(imsi, plmn_id, user_agent: Annotated[str 
     verify_user_agent(allowed_user_agents = ["UDM"], user_agent = user_agent)
     j = db().find_subscriber_one(query = { "udm_5g_data.udm_imsi": imsi, 
                                             "udm_5g_data.serving_plmn_id.plmn_id": plmn_id  })
-
+                                            
     if j:
         return JSONResponse(content = {
                     "gpsis": j["udm_5g_data"]["serving_plmn_id"]["provisioned_data"]["access_and_mobility_subscription_data"]["gen_public_subscription_ids"],
