@@ -22,7 +22,7 @@ hypercorn main:app --bind 0.0.0.0:9090 --workers 4
 To create a subscriber, use the following sintax:
 ```shell
   curl -X 'POST' \
-    'http://localhost:9090/subscriber/' \
+    'http://localhost:9999/subscriber/' \
     -H 'accept: application/json' \
     -H 'Content-Type: application/json' \
     -d '{

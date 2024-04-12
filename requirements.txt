@@ -4,3 +4,14 @@ pydantic
 hypercorn
 typing
 jsonpath-ng
+
+# Opentelemetry:
+
+opentelemetry-distro
+opentelemetry-exporter-otlp
+fastapi
+uvicorn
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi
+opentelemetry-exporter-jaeger

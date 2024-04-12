@@ -9,8 +9,9 @@ export SUBSCRIBER_COLLECTION_NAME="subscriber"
 
 source config-rc
 
-podman stop mongodb &>/dev/null
-podman rm mongodb &>/dev/null
+podman stop --all
+podman rm --all
+
 podman network rm mongodb-network &>/dev/null
 podman network create mongodb-network
 podman run -d --network mongodb-network \
@@ -20,8 +21,18 @@ podman run -d --network mongodb-network \
     -e MONGO_INITDB_ROOT_PASSWORD=${DATABASE_PASS} \
     docker.io/library/mongo
 
+podman run -d \
+  -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
+  -p 16686:16686 \
+  -p 4317:4317 \
+  -p 4318:4318 \
+  -p 9411:9411 \
+  docker.io/jaegertracing/all-in-one:latest
 
-python3 -m venv env
+if [ ! -d env ]; then
+    python3 -m venv env
+    source env/bin/activate
+    pip install -r requirements.txt
+fi
 source env/bin/activate
-pip install -r requirements.txt
 hypercorn main:app --bind 0.0.0.0:9999 --workers 4    

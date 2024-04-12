@@ -9,21 +9,65 @@ from .utils import *
 from models.subscriber_models import *
 from models.udr_api_models import *
 
+from opentelemetry import trace
+from opentelemetry import metrics
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+
+
+# Configure your TracerProvider with a service name
+resource = Resource(attributes={
+    SERVICE_NAME: "UDR"
+})
+
+# Create a new tracer provider with the specified resource
+tracer_provider = TracerProvider(resource=resource)
+
+# Acquire a tracer
+trace.set_tracer_provider(tracer_provider)
+tracer = trace.get_tracer("UDR.tracer")
+
+# Acquire a meter.
+meter = metrics.get_meter("UDR.meter")
+
+# Now configure the span processor and exporter as before
+#otlp_exporter = OTLPSpanExporter()
+otlp_exporter = OTLPSpanExporter(endpoint="localhost:4317", insecure=True)
+
+span_processor = BatchSpanProcessor(otlp_exporter)
+tracer_provider.add_span_processor(span_processor)
+
+
 router = APIRouter()
 
 @router.post("/")
 async def create_subscriber(subscriber: Subscriber):
-    if subscriber.auc.imsi is None :
-        raise HTTPException(status_code=422, detail = "IMSI can't be null.")
 
-    client, db, collection = open_db()
-    if collection.find_one({"auc.imsi": subscriber.auc.imsi }):
-        close_db(client)
-        raise HTTPException(status_code=422, detail = "IMSI Already exists.")
-    else:
-        collection.insert_one(subscriber.model_dump(mode="json"))
-        close_db(client)
-        return {"message": "Item created successfully", "subscriber": subscriber} 
+    with tracer.start_as_current_span("[UDR Subscriber]") as span:                        
+        span.set_attribute("subscriber.imsi", str(subscriber.auc.imsi))
+        span.set_attribute("subscriber.msisdn", str(subscriber.udm_5g_data.udm_msisdn))
+        
+        with tracer.start_as_current_span("HTTP2 Request Processing") as span:                        
+            span.set_attribute("http.request_payload", str(subscriber.model_dump(mode="json")))
+            
+        with tracer.start_as_current_span("HTTP2 Response Processing") as span:                
+            if subscriber.auc.imsi is None :        
+                span.set_attribute("http.response_payload", "IMSI can't be null.")
+                raise HTTPException(status_code=422, detail = "IMSI can't be null.")
+            
+            client, db, collection = open_db()
+            if collection.find_one({"auc.imsi": subscriber.auc.imsi }):                
+                span.set_attribute("http.response_payload", "IMSI Already exists.")
+                close_db(client)
+                raise HTTPException(status_code=422, detail = "IMSI Already exists.")
+            
+            else:
+                collection.insert_one(subscriber.model_dump(mode="json"))                       
+                span.set_attribute("http.response_payload", "Item created successfully, subscriber: " + str(subscriber.model_dump(mode="json")))                
+                close_db(client)     
+                return {"message": "Item created successfully", "subscriber": subscriber} 
 
 # UDR api:
 # GET authentication-data
