@@ -31,7 +31,7 @@ export MCC="724"
 export MNC="17"
 export CC=55
 
-if [ -z "${1}"]; then
+if [ -z "${1}" ]; then
   usage
 fi
 
