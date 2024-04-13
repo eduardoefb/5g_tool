@@ -63,28 +63,29 @@ async def get_authentication_data(imsi, user_agent: Annotated[str | None, Header
         with start_span(tracer, "Get authentication-data Request") as span:                                     
             span.set_attribute("subscriber.data.request", str(f"IMSI: {imsi}"))
 
-        verify_user_agent(allowed_user_agents = ["UDM"], user_agent = user_agent)
+        with start_span(tracer, "Get authentication-data Response") as span:
+            verify_user_agent(allowed_user_agents = ["UDM"], user_agent = user_agent)
 
-        j = db().find_subscriber_one(query = { "auc.imsi": imsi })
-        if j:
+            j = db().find_subscriber_one(query = { "auc.imsi": imsi })
+            if j:
 
-            response = {
-                        "authenticationMethod": j["udm_5g_data"]["authentication_data"]["authentication_method"],
-                        "encPermanentKey": str(j["auc"]["enc_key"]).lower(),
-                        "sequenceNumber":	{
-                            "sqn": '{:012}'.format(j["auc"]["sqn"])
-                        },
-                        "authenticationManagementField": j["auc"]["amf"],
-                        "encOpcKey": str(j["auc"]["opc_enc_key"]).lower()
-                    }
+                response = {
+                            "authenticationMethod": j["udm_5g_data"]["authentication_data"]["authentication_method"],
+                            "encPermanentKey": str(j["auc"]["enc_key"]).lower(),
+                            "sequenceNumber":	{
+                                "sqn": '{:012}'.format(j["auc"]["sqn"])
+                            },
+                            "authenticationManagementField": j["auc"]["amf"],
+                            "encOpcKey": str(j["auc"]["opc_enc_key"]).lower()
+                        }
 
-            with start_span(tracer, "Get authentication-data Response") as span:                        
+                                        
                 span.set_attribute("subscriber.data.response.text", str(response))
                 span.set_attribute("subscriber.data.response.code", "200")
 
-            return JSONResponse(response)
-        else:
-            raise HTTPException(status_code=404)
+                return JSONResponse(response)
+            else:
+                raise HTTPException(status_code=404)
 
 # GET am-data        
 @router.get("/v1/subscription-data/imsi-{imsi}/{plmn_id}/provisioned-data/am-data", response_class=PlainTextResponse)
@@ -158,17 +159,16 @@ async def put_gpp_amf_access(imsi: str, item_data: ItemDataModel, user_agent: An
             span.set_attribute("subscriber.data.input_data", str(dict(input_data)))
 
 
-            with start_span(tracer, "Put am-data Response") as span:                     
-                j = db().update_subscriber_one(query = { "udm_5g_data.udm_imsi": imsi },
-                                                filter_path = "udm_5g_data.context_data",
-                                                new_value = input_data
-                                                )
-
-                span.set_attribute("subscriber.data.response.text", str(j))                
-                if j is None:        
-                    raise HTTPException(status_code=404)
-                    span.set_attribute("subscriber.data.response.code", "404")
-                else:
-                    span.set_attribute("subscriber.data.response.code", "200")
-
+        with start_span(tracer, "Put am-data Response") as span:                     
+            j = db().update_subscriber_one(query = { "udm_5g_data.udm_imsi": imsi },
+                                            filter_path = "udm_5g_data.context_data",
+                                            new_value = input_data
+                                            )
+        
+            span.set_attribute("subscriber.data.response.text", str(j))                
+            if j is None:        
+                raise HTTPException(status_code=404)
+                span.set_attribute("subscriber.data.response.code", "404")
+            else:
+                span.set_attribute("subscriber.data.response.code", "200")
 
