@@ -1,0 +1,63 @@
+# Gitlabci file
+ 
+stages:  
+  - cleanup_stage
+  - download_stage
+  - deploy_stage
+  - validate_stage
+  - terminate_stage
+
+variables:
+  DEPLOY_DIR: netenv_deploy
+
+cleanup:
+  stage: cleanup_stage
+  script:
+    - podman stop --all
+    - podman rm --all  
+    - rm -rf ${DEPLOY_DIR} || true
+  only:
+    - dev    
+
+download:
+  stage: download_stage
+  script:
+    - cd ${HOME}
+    - if [ -d "${DEPLOY_DIR}" ]; then rm -rf ${DEPLOY_DIR}; fi
+    - git clone https://gitlab.cloud.int/scripts/5g_api.git ${DEPLOY_DIR}
+    - cd ${HOME}/${DEPLOY_DIR}
+    - git checkout ${CI_COMMIT_BRANCH}
+  only:
+    - dev
+ 
+deploy:
+  stage: deploy_stage
+  script:
+    - podman network rm mongodb-network &>/dev/null
+    - podman network create mongodb-network
+    - podman run -d --network mongodb-network -p ${MONGODB_EXTERNAL_IP}:27017:27017 --name ${CONTAINER_NAME} -e MONGO_INITDB_ROOT_USERNAME=${DATABASE_USER} -e MONGO_INITDB_ROOT_PASSWORD=${DATABASE_PASS} docker.io/library/mongo
+    - podman run -d -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 -p 16686:16686 -p 4317:4317 -p 4318:4318 -p 9411:9411 docker.io/jaegertracing/all-in-one:latest
+    - cd ${HOME}/${DEPLOY_DIR} 
+    - python3 -m venv env || exit 1
+    - source env/bin/activate || exit 1
+    - pip install -r requirements.txt || exit 1    
+    - nohup hypercorn main:app --bind 0.0.0.0:9999 --workers 4 >/dev/null 2>&1&
+  only:
+    - dev   
+
+validate: 
+  stage: validate_stage
+  script:
+    - cd ${HOME}/${DEPLOY_DIR} 
+    - bash test_script.sh 10
+  only:
+    - dev   
+
+terminate:
+  stage: terminate_stage
+  script:
+    - cd ${HOME}
+    - rm -rf ${DEPLOY_DIR} || true
+    - pkill -f hypercorn >/dev/null 2>&1
+  only:
+    - dev  

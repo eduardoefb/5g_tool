@@ -9,6 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException 
 from api.udr import router as udr_router
 from api.exceptions import http_exception_handler, validation_exception_handler
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 
 
@@ -20,6 +21,7 @@ from fastapi.openapi.docs import (
 
 # app = FastAPI()
 app = FastAPI(docs_url=None, redoc_url=None)
+# FastAPIInstrumentor.instrument_app(app)
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():

@@ -6,6 +6,7 @@ import json
 from jsonpath_ng import jsonpath, parse
 from contextlib import contextmanager
 from opentelemetry import trace
+from opentelemetry.trace import StatusCode
 
 mongo_db_name = os.environ.get("DATABASE_NAME")
 mongo_db_user = os.environ.get("DATABASE_USER")
@@ -73,4 +74,12 @@ def managed_db_connection():
     finally:
         close_db(client)
 
-        
+@contextmanager
+def start_span(tracer, name):
+    with tracer.start_as_current_span(name) as span:        
+        try:            
+            yield span       
+        except Exception as e:
+            span.record_exception(e)
+            span.set_status(StatusCode.ERROR, str(e))
+            raise        
