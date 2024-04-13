@@ -36,7 +36,13 @@
     }
   }'
 
+echo
+curl --http2 http://127.0.0.1:9999/nudr-dr/v1/subscription-data/imsi-724170000000010/authentication-data/authentication-subscription     \
+  -H':method: GET'    \
+  -H'user-agent: UDM'
 
-  curl --http2 http://127.0.0.1:9999/nudr-dr/v1/subscription-data/imsi-724170000000010/authentication-data/authentication-subscription     \
+
+echo
+curl --http2 http://127.0.0.1:9999/nudr-dr/v1/subscription-data/imsi-724170000000001/72417/provisioned-data/am-data     \
   -H':method: GET'    \
   -H'user-agent: UDM'

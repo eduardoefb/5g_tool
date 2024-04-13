@@ -6,7 +6,7 @@ export DATABASE_PASS="secret"
 export MONGODB_EXTERNAL_IP="127.0.0.1"
 export CONTAINER_NAME="mongodb"
 export SUBSCRIBER_COLLECTION_NAME="subscriber"
-
+export OTLP_ENDPOINT="10.2.1.32:4317"
 source config-rc
 
 podman stop --all

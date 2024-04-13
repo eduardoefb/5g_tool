@@ -4,6 +4,8 @@ from fastapi import APIRouter, HTTPException, Header
 from bson.json_util import dumps
 import json
 from jsonpath_ng import jsonpath, parse
+from contextlib import contextmanager
+from opentelemetry import trace
 
 mongo_db_name = os.environ.get("DATABASE_NAME")
 mongo_db_user = os.environ.get("DATABASE_USER")
@@ -61,3 +63,14 @@ class db:
         self.close()
         return out        
 
+from contextlib import contextmanager
+
+@contextmanager
+def managed_db_connection():
+    client, db, collection = open_db()
+    try:
+        yield collection
+    finally:
+        close_db(client)
+
+        
