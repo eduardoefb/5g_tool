@@ -19,7 +19,7 @@ podman run -d --network mongodb-network \
     --name ${CONTAINER_NAME} \
     -e MONGO_INITDB_ROOT_USERNAME=${DATABASE_USER} \
     -e MONGO_INITDB_ROOT_PASSWORD=${DATABASE_PASS} \
-    docker.io/library/mongo
+    docker.io/library/mongo --log-driver journald 
 
 podman run -d \
   -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
